@@ -1,0 +1,5 @@
+dist-ssr/
+storybook-static/
+test-results/
+playwright-report/
+*.zip

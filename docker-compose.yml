@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: apps/backend/Dockerfile
+      dockerfile: apps/backend/dockerfile
     container_name: ratiod-backend
     environment:
       - PORT=3000

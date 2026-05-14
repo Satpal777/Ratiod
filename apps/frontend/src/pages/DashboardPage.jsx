@@ -4,7 +4,10 @@ import { io } from "socket.io-client";
 import { API_BASE_URL } from "../constants/index.js";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { apiRequest } from "../utils/api.js";
-import { PollAnalytics } from "../components/PollAnalytics.jsx";
+import {
+  OverallAnalyticsCharts,
+  PollAnalytics,
+} from "../components/PollAnalytics.jsx";
 import { Icon } from "../components/ui/Icon.jsx";
 
 // Helpers
@@ -36,23 +39,38 @@ export function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [overallAnalytics, setOverallAnalytics] = useState(null);
   const [voters, setVoters] = useState(null);
-  const [showVoters, setShowVoters] = useState(false);
 
-  const [status, setStatus] = useState("");
-  const [error, setError] = useState("");
+  const [answeredPolls, setAnsweredPolls] = useState([]);
+
+  const [status, setStatusState] = useState("");
+  const [error, setErrorState] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function setStatus(msg) {
+    setStatusState(msg);
+    if (msg) setTimeout(() => setStatusState(""), 4000);
+  }
+
+  function setError(msg) {
+    setErrorState(msg);
+    if (msg) setTimeout(() => setErrorState(""), 4000);
+  }
 
   const activePoll = polls.find((poll) => poll.id === activePollId);
 
   // Fetch polls
   useEffect(() => {
     let isMounted = true;
-    apiRequest("/polls").then((data) => {
+    Promise.all([
+      apiRequest("/polls").catch(() => ({ polls: [] })),
+      apiRequest("/polls/answered").catch(() => ({ polls: [] }))
+    ]).then(([createdData, answeredData]) => {
       if (!isMounted) return;
-      const nextPolls = data.polls ?? [];
+      const nextPolls = createdData.polls ?? [];
       setPolls(nextPolls);
+      setAnsweredPolls(answeredData.polls ?? []);
       setActivePollId((current) => current || nextPolls[0]?.id || "");
-    }).catch((err) => { if (isMounted) setError(err.message); });
+    });
     return () => { isMounted = false; };
   }, []);
 
@@ -96,7 +114,9 @@ export function DashboardPage() {
         if (isMounted) setVoters(data.voters);
       }).catch(() => { if (isMounted) setVoters(null); });
     } else {
-      setVoters(null);
+      Promise.resolve().then(() => {
+        if (isMounted) setVoters(null);
+      });
     }
 
     return () => { isMounted = false; };
@@ -168,6 +188,21 @@ export function DashboardPage() {
       const data = await apiRequest(`/polls/${activePollId}/publish`, { method: "POST" });
       setAnalytics(data.analytics);
       setStatus("Final results are now public on the poll link.");
+      const refreshData = await apiRequest("/polls");
+      setPolls(refreshData.polls ?? []);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleTerminate() {
+    if (!activePollId) return;
+    setError(""); setStatus(""); setLoading(true);
+    try {
+      await apiRequest(`/polls/${activePollId}/terminate`, { method: "POST" });
+      setStatus("Poll has been manually closed and is no longer accepting responses.");
       const refreshData = await apiRequest("/polls");
       setPolls(refreshData.polls ?? []);
     } catch (requestError) {
@@ -298,13 +333,28 @@ export function DashboardPage() {
                 <div className="poll-list">
                   {polls.length === 0 && <p className="empty-state">No polls created yet.</p>}
                   {polls.map((poll) => (
-                    <button className={`poll-list-item ${activePollId === poll.id ? "poll-list-item-active" : ""}`} key={poll.id} type="button" onClick={() => setActivePollId(poll.id)}>
+                    <button className={`poll-list-item ${activePollId === poll.id && activeTab !== 'voters-detail' ? "poll-list-item-active" : ""}`} key={poll.id} type="button" onClick={() => { setActivePollId(poll.id); setActiveTab('view'); }}>
                       <span>
                         <strong>{poll.title}</strong>
                         <small>{formatDate(poll.expiresAt)}</small>
                       </span>
                       <em>{poll.isResultPublished ? "Published" : poll.status}</em>
                     </button>
+                  ))}
+                </div>
+                <div className="poll-list" style={{ marginTop: '32px' }}>
+                  <h3 style={{ fontSize: '0.9rem', opacity: 0.6, marginBottom: '12px', paddingLeft: '14px' }}>Answered Polls</h3>
+                  {answeredPolls.length === 0 && <p className="empty-state" style={{ paddingLeft: '14px' }}>No answered polls yet.</p>}
+                  {answeredPolls.map((poll) => (
+                    <Link className="poll-list-item" key={poll.id} to={`/poll/${poll.slug}`} target="_blank" style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <span>
+                        <strong>{poll.title}</strong>
+                        <small>Submitted: {formatDate(poll.submittedAt)}</small>
+                      </span>
+                      <em style={{ opacity: poll.isResultPublished ? 1 : 0.5 }}>
+                        {poll.isResultPublished ? "Results Available" : "Results Hidden"}
+                      </em>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -328,38 +378,86 @@ export function DashboardPage() {
 
                   <PollAnalytics analytics={analytics} />
 
-                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
                     <button className="button button-primary" disabled={loading} onClick={handlePublish}>Publish Results</button>
                     {activePoll.mode === 'authenticated' && voters && voters.length > 0 && (
-                      <button className="button button-secondary" onClick={() => setShowVoters(!showVoters)}>
-                        {showVoters ? "Hide Details" : "View Details"}
+                      <button className="button button-secondary" onClick={() => setActiveTab('voters-detail')}>
+                        View Details
+                      </button>
+                    )}
+                    {activePoll.status === 'active' && !activePoll.isExpired && (
+                      <button className="button button-secondary" style={{ color: 'var(--accent)', borderColor: 'var(--accent)' }} disabled={loading} onClick={handleTerminate}>
+                        Close Poll
                       </button>
                     )}
                   </div>
-
-                  {showVoters && voters && (
-                    <div className="voters-list">
-                      <h3>Voter Details</h3>
-                      {voters.map((voter) => (
-                        <div className="voter-item" key={voter.responseId}>
-                          <img src={voter.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(voter.user.name)}`} alt={voter.user.name} />
-                          <div className="voter-item-info">
-                            <strong>{voter.user.name}</strong>
-                            <span>{voter.user.email} &bull; {new Date(voter.submittedAt).toLocaleString()}</span>
-                            {voter.answers.map(ans => {
-                              const q = activePoll.questions.find(qu => qu.id === ans.questionId);
-                              const opt = q?.options.find(o => o.id === ans.optionId);
-                              if (!q || !opt) return null;
-                              return <div key={ans.questionId} style={{ fontSize: '0.75rem', marginTop: '4px' }}><strong>{q.text}:</strong> {opt.text}</div>
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'voters-detail' && activePoll && voters && (
+          <div className="dashboard-card view-voters-layout">
+            <div className="dashboard-card-inner">
+              <div className="workspace-card-head" style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span className="panel-kicker">Detailed Overview</span>
+                  <h2>Voter Records</h2>
+                  <p className="sketch-text" style={{ margin: '8px 0 0 0', color: 'var(--muted)' }}>For poll: {activePoll.title}</p>
+                </div>
+                <button className="button button-secondary" onClick={() => setActiveTab('view')}>
+                  Back to Poll
+                </button>
+              </div>
+
+              <div className="sketch-table-wrapper" style={{ overflowX: 'auto', border: '2px solid var(--text)', borderRadius: '16px', background: 'var(--bg)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--panel)', borderBottom: '2px solid var(--text)' }}>
+                      <th style={{ padding: '16px', fontWeight: 800 }}>Voter</th>
+                      <th style={{ padding: '16px', fontWeight: 800 }}>Date</th>
+                      {analytics?.questionSummaries?.map((q, i) => (
+                        <th key={q.id} style={{ padding: '16px', fontWeight: 800 }}>Q{i + 1}: {q.text}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {voters.map((voter) => (
+                      <tr key={voter.responseId} style={{ borderBottom: '1px dashed var(--line-strong)' }}>
+                        <td style={{ padding: '16px', minWidth: '200px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <img src={voter.user.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(voter.user.name)}`} alt={voter.user.name} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid var(--text)' }} />
+                            <div>
+                              <strong style={{ display: 'block', fontSize: '0.9rem' }}>{voter.user.name}</strong>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>{voter.user.email}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px', fontSize: '0.85rem', color: 'var(--muted)', minWidth: '150px' }}>
+                          {new Date(voter.submittedAt).toLocaleString()}
+                        </td>
+                        {analytics?.questionSummaries?.map((q) => {
+                          const ans = voter.answers.find(a => a.questionId === q.id);
+                          const opt = q.options?.find(o => o.id === ans?.optionId);
+                          return (
+                            <td key={q.id} style={{ padding: '16px', fontSize: '0.9rem', minWidth: '200px' }}>
+                              {opt ? (
+                                <span style={{ background: 'var(--warm)', padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--line-strong)' }}>
+                                  {opt.text}
+                                </span>
+                              ) : (
+                                <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>Skipped</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
@@ -390,36 +488,13 @@ export function DashboardPage() {
                       <span>Unique Voters</span>
                       <strong>{overallAnalytics.uniqueRespondents}</strong>
                     </div>
-                  </div>
-                  
-                  {/* Visual graph representation of responses vs voters */}
-                  <div className="question-results" style={{ marginTop: '24px' }}>
-                    <div className="question-result">
-                      <div className="question-result-head">
-                        <h4>Engagement Overview</h4>
-                      </div>
-                      
-                      <div className="result-row compact-result-row">
-                        <div className="result-row-meta">
-                          <span>Responses Volume</span>
-                          <strong>{overallAnalytics.totalResponses}</strong>
-                        </div>
-                        <div className="result-track">
-                          <div className="result-fill" style={{ width: overallAnalytics.totalResponses > 0 ? '100%' : '0%' }} />
-                        </div>
-                      </div>
-                      
-                      <div className="result-row compact-result-row">
-                        <div className="result-row-meta">
-                          <span>Voters Volume</span>
-                          <strong>{overallAnalytics.uniqueRespondents}</strong>
-                        </div>
-                        <div className="result-track">
-                          <div className="result-fill" style={{ width: overallAnalytics.uniqueRespondents > 0 ? `${(overallAnalytics.uniqueRespondents / overallAnalytics.totalResponses) * 100}%` : '0%' }} />
-                        </div>
-                      </div>
+                    <div className="metric-tile">
+                      <span>Published Polls</span>
+                      <strong>{overallAnalytics.publishedPolls}</strong>
                     </div>
                   </div>
+
+                  <OverallAnalyticsCharts analytics={overallAnalytics} />
                 </div>
               )}
             </div>

@@ -205,6 +205,39 @@ export async function listCreatorPolls(userId: string) {
   return rows.map((poll) => ({ ...poll, isExpired: isExpired(poll) }));
 }
 
+export async function listAnsweredPolls(userId: string) {
+  const answeredPolls = await db
+    .select({
+      id: polls.id,
+      title: polls.title,
+      slug: polls.slug,
+      isResultPublished: polls.isResultPublished,
+      status: polls.status,
+      submittedAt: pollResponses.submittedAt,
+    })
+    .from(pollResponses)
+    .innerJoin(polls, eq(pollResponses.pollId, polls.id))
+    .where(and(eq(pollResponses.respondentId, userId), eq(pollResponses.status, "completed")))
+    .orderBy(desc(pollResponses.submittedAt));
+  
+  return answeredPolls;
+}
+
+export async function terminatePoll(pollId: string, userId: string) {
+  const poll = await ensureCreator(pollId, userId);
+  
+  if (poll.status === "closed" || poll.status === "expired") {
+    return poll; // Already terminated
+  }
+  
+  await db
+    .update(polls)
+    .set({ status: "closed" })
+    .where(eq(polls.id, poll.id));
+    
+  return { ...poll, status: "closed" };
+}
+
 export async function getPublicPoll(slug: string) {
   const poll = await getPollRowsBySlug(slug);
   if (!poll) throw new Error("Poll not found.");
@@ -423,6 +456,17 @@ export async function getCreatorAnalytics(pollId: string, userId: string) {
   return calculateAnalytics(pollId);
 }
 
+export async function getRespondentAnalytics(pollId: string, userId: string) {
+  const responses = await db
+    .select()
+    .from(pollResponses)
+    .where(and(eq(pollResponses.pollId, pollId), eq(pollResponses.respondentId, userId)));
+  if (responses.length === 0) {
+    throw new Error("You have not answered this poll.");
+  }
+  return calculateAnalytics(pollId);
+}
+
 export async function publishResults(pollId: string, userId: string) {
   const poll = await ensureCreator(pollId, userId);
   const analytics = await calculateAnalytics(poll.id);
@@ -486,14 +530,33 @@ function emitPollUpdate(pollId: string, analytics: Awaited<ReturnType<typeof cal
 }
 
 export async function getOverallAnalytics(userId: string) {
-  const userPolls = await db.select({ id: polls.id }).from(polls).where(eq(polls.creatorId, userId));
+  const userPolls = await db
+    .select({
+      id: polls.id,
+      title: polls.title,
+      mode: polls.mode,
+      status: polls.status,
+      isResultPublished: polls.isResultPublished,
+    })
+    .from(polls)
+    .where(eq(polls.creatorId, userId));
   const pollIds = userPolls.map((p) => p.id);
 
   if (pollIds.length === 0) {
-    return { totalPolls: 0, totalResponses: 0, uniqueRespondents: 0 };
+    return {
+      totalPolls: 0,
+      totalResponses: 0,
+      uniqueRespondents: 0,
+      publishedPolls: 0,
+      activePolls: 0,
+      statusCounts: [],
+      modeCounts: [],
+      pollBreakdown: [],
+    };
   }
 
   const snapshots = await db.select().from(analyticsSnapshots).where(inArray(analyticsSnapshots.pollId, pollIds));
+  const snapshotByPollId = new Map(snapshots.map((snapshot) => [snapshot.pollId, snapshot]));
   
   let totalResponses = 0;
   let uniqueRespondents = 0;
@@ -503,10 +566,42 @@ export async function getOverallAnalytics(userId: string) {
     uniqueRespondents += snap.uniqueRespondents;
   }
 
+  const statusCounts = Object.entries(
+    userPolls.reduce<Record<string, number>>((acc, poll) => {
+      acc[poll.status] = (acc[poll.status] ?? 0) + 1;
+      return acc;
+    }, {}),
+  ).map(([label, value]) => ({ label, value }));
+
+  const modeCounts = Object.entries(
+    userPolls.reduce<Record<string, number>>((acc, poll) => {
+      acc[poll.mode] = (acc[poll.mode] ?? 0) + 1;
+      return acc;
+    }, {}),
+  ).map(([label, value]) => ({ label, value }));
+
   return {
     totalPolls: pollIds.length,
     totalResponses,
-    uniqueRespondents
+    uniqueRespondents,
+    publishedPolls: userPolls.filter((poll) => poll.isResultPublished).length,
+    activePolls: userPolls.filter((poll) => poll.status === "active").length,
+    statusCounts,
+    modeCounts,
+    pollBreakdown: userPolls
+      .map((poll) => {
+        const snapshot = snapshotByPollId.get(poll.id);
+        return {
+          id: poll.id,
+          title: poll.title,
+          mode: poll.mode,
+          status: poll.status,
+          responses: snapshot?.totalResponses ?? 0,
+          uniqueRespondents: snapshot?.uniqueRespondents ?? 0,
+        };
+      })
+      .sort((a, b) => b.responses - a.responses)
+      .slice(0, 8),
   };
 }
 

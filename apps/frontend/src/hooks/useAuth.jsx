@@ -39,14 +39,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const handleGoogleSignIn = async (redirectTo = "/dashboard") => {
+    const finalRedirect = typeof redirectTo === 'string' ? redirectTo : '/dashboard';
     setAuthLoading(true);
     try {
       const data = await authRequest("/sign-in/social", {
         body: JSON.stringify({
           provider: "google",
-          callbackURL: window.location.origin + redirectTo,
+          callbackURL: window.location.origin + finalRedirect,
           errorCallbackURL: window.location.origin,
-          newUserCallbackURL: window.location.origin + redirectTo,
+          newUserCallbackURL: window.location.origin + finalRedirect,
         }),
         method: "POST",
       });

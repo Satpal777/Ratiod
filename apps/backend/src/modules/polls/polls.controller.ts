@@ -10,6 +10,9 @@ import {
   submitResponse,
   getOverallAnalytics,
   getPollVoters,
+  terminatePoll,
+  listAnsweredPolls,
+  getRespondentAnalytics,
 } from "./polls.service";
 
 function paramValue(value: string | string[] | undefined, name: string) {
@@ -115,6 +118,39 @@ export async function pollVotersHandler(req: Request, res: Response) {
       req.auth!.user.id,
     );
     res.json({ voters });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+export async function terminatePollHandler(req: Request, res: Response) {
+  try {
+    const poll = await terminatePoll(
+      paramValue(req.params.pollId, "Poll id"),
+      req.auth!.user.id,
+    );
+    res.json({ poll });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+export async function listAnsweredPollsHandler(req: Request, res: Response) {
+  try {
+    const polls = await listAnsweredPolls(req.auth!.user.id);
+    res.json({ polls });
+  } catch (error) {
+    sendError(res, error);
+  }
+}
+
+export async function respondentAnalyticsHandler(req: Request, res: Response) {
+  try {
+    const analytics = await getRespondentAnalytics(
+      paramValue(req.params.pollId, "Poll id"),
+      req.auth!.user.id,
+    );
+    res.json({ analytics });
   } catch (error) {
     sendError(res, error);
   }

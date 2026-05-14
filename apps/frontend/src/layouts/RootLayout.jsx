@@ -35,8 +35,11 @@ export function RootLayout() {
           <div className="topbar-actions" style={{ display: 'flex', gap: '8px' }}>
             {session?.user ? (
               <>
-                <Link to="/dashboard" className="button button-primary">
-                  Dashboard
+                <Link to="/dashboard" className="button button-primary" style={{ padding: '8px 24px', borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px', border: '2px solid var(--text)' }}>
+                  Go to Dashboard
+                  <span className="button-icon">
+                    <Icon name="arrow" />
+                  </span>
                 </Link>
                 <button
                   className="button button-secondary"

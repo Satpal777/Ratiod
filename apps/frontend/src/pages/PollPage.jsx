@@ -99,11 +99,9 @@ export function PollPage() {
 
   if (loading && !pollData) {
     return (
-      <section className="public-poll-section">
-        <div className="shell-card">
-          <div className="shell-inner public-poll-card">
-            <p className="empty-state">Loading poll...</p>
-          </div>
+      <section className="public-poll-section" style={{ maxWidth: '800px', margin: '120px auto', padding: '0 24px' }}>
+        <div className="sketch-box" style={{ padding: '64px', textAlign: 'center' }}>
+          <p className="sketch-text" style={{ fontSize: '1.5rem', color: 'var(--muted)' }}>Loading poll...</p>
         </div>
       </section>
     );
@@ -111,15 +109,13 @@ export function PollPage() {
 
   if (!poll) {
     return (
-      <section className="public-poll-section">
-        <div className="shell-card">
-          <div className="shell-inner public-poll-card">
-            <h1>Poll Not Found</h1>
-            <p className="empty-state">{error || "This poll link is not available."}</p>
-            <Link className="button button-primary" to="/">
-              Back home
-            </Link>
-          </div>
+      <section className="public-poll-section" style={{ maxWidth: '800px', margin: '120px auto', padding: '0 24px' }}>
+        <div className="sketch-box" style={{ padding: '64px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 800, margin: '0 0 16px 0' }}>Poll Not Found</h1>
+          <p style={{ color: 'var(--muted)', fontSize: '1.2rem', marginBottom: '32px' }}>{error || "This poll link is not available."}</p>
+          <Link className="button button-primary" to="/">
+            Back home
+          </Link>
         </div>
       </section>
     );
@@ -129,22 +125,21 @@ export function PollPage() {
     pollData.view === "form" && poll.status === "active" && !poll.isExpired;
 
   return (
-    <section className="public-poll-section">
-      <div className="public-poll-grid">
-        <div className="shell-card">
-          <div className="shell-inner public-poll-card">
-            <div className="workspace-card-head">
-              <div>
-                <span className="panel-kicker">
-                  {poll.mode === "authenticated" ? "Signed voters" : "Anonymous voting"}
-                </span>
-                <h1>{poll.title}</h1>
-              </div>
-              <span className="live-pill">
-                <span className="live-dot" />
-                {poll.isResultPublished ? "Published" : poll.status}
+    <section className="public-poll-section" style={{ maxWidth: '1120px', margin: '120px auto', padding: '0 24px' }}>
+      <div className="public-poll-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'start' }}>
+        <div className="sketch-box" style={{ padding: '48px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="workspace-card-head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <span className="sketch-text" style={{ padding: '4px 12px', background: 'var(--warm)', border: '2px solid var(--text)', borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px', display: 'inline-block', marginBottom: '16px', color: 'var(--accent)' }}>
+                {poll.mode === "authenticated" ? "Signed voters" : "Anonymous voting"}
               </span>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, margin: 0 }}>{poll.title}</h1>
             </div>
+            <span style={{ background: poll.isResultPublished ? '#dcfce7' : '#fef2f2', color: poll.isResultPublished ? '#166534' : '#ef4444', border: `2px solid ${poll.isResultPublished ? '#166534' : '#ef4444'}`, padding: '4px 12px', borderRadius: '999px', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', background: poll.isResultPublished ? '#166534' : '#ef4444', borderRadius: '50%' }} />
+              {poll.isResultPublished ? "Published" : poll.status}
+            </span>
+          </div>
 
             {poll.description && <p className="public-description">{poll.description}</p>}
             {status && <p className="workspace-notice workspace-notice-success">{status}</p>}
@@ -209,29 +204,26 @@ export function PollPage() {
                 </button>
               </form>
             ) : (
-              <p className="empty-state">
+              <p className="sketch-text" style={{ fontSize: '1.2rem', color: 'var(--muted)', textAlign: 'center', margin: '32px 0 0 0' }}>
                 This poll is no longer accepting responses.
               </p>
             )}
-          </div>
         </div>
 
-        <div className="shell-card">
-          <div className="shell-inner public-poll-card analytics-card">
-            <div className="workspace-card-head">
-              <div>
-                <span className="panel-kicker">
-                  {poll.isResultPublished ? "Final outcome" : "Live pulse"}
-                </span>
-                <h2>{poll.isResultPublished ? "Results" : "After Vote"}</h2>
-              </div>
+        <div className="sketch-box" style={{ padding: '48px', transform: 'rotate(1deg)' }}>
+          <div className="workspace-card-head" style={{ marginBottom: '32px' }}>
+            <div>
+              <span className="sketch-text" style={{ padding: '4px 12px', background: 'var(--panel)', border: '2px solid var(--text)', borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px', display: 'inline-block', marginBottom: '16px', color: 'var(--teal)' }}>
+                {poll.isResultPublished ? "Final outcome" : "Live pulse"}
+              </span>
+              <h2 style={{ fontSize: '2rem', fontWeight: 800, margin: 0 }}>{poll.isResultPublished ? "Results" : "After Vote"}</h2>
             </div>
-
-            <PollAnalytics
-              analytics={analytics}
-              emptyText="Results appear here after submission or publishing."
-            />
           </div>
+
+          <PollAnalytics
+            analytics={analytics}
+            emptyText="Results appear here after submission or publishing."
+          />
         </div>
       </div>
     </section>

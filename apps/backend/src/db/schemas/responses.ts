@@ -10,7 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { responseStatusEnum } from "./enums";
-import { users } from "./users";
+import { user } from "./auth";
 import {
   polls,
   pollQuestions,
@@ -27,7 +27,7 @@ export const pollResponses = pgTable(
       .notNull()
       .references(() => polls.id, { onDelete: "cascade" }),
 
-    respondentId: uuid("respondent_id").references(() => users.id, {
+    respondentId: text("respondent_id").references(() => user.id, {
       onDelete: "set null",
     }),
 

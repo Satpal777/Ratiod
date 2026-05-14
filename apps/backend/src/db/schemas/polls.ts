@@ -17,14 +17,14 @@ import {
   metadataFieldTypeEnum,
 } from "./enums";
 
-import { users } from "./users";
+import { user } from "./auth";
 
 export const polls = pgTable(
   "polls",
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
-    creatorId: uuid("creator_id").references(() => users.id, {
+    creatorId: text("creator_id").references(() => user.id, {
       onDelete: "set null",
     }),
 

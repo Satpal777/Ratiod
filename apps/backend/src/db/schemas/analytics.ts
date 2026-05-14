@@ -7,9 +7,10 @@ import {
   index,
   uniqueIndex,
   boolean,
+  text,
 } from "drizzle-orm/pg-core";
 
-import { users } from "./users";
+import { user } from "./auth";
 import { polls } from "./polls";
 
 export const analyticsSnapshots = pgTable(
@@ -63,7 +64,7 @@ export const pollResultPublications = pgTable(
       .unique()
       .references(() => polls.id, { onDelete: "cascade" }),
 
-    publishedById: uuid("published_by_id").references(() => users.id, {
+    publishedById: text("published_by_id").references(() => user.id, {
       onDelete: "set null",
     }),
 

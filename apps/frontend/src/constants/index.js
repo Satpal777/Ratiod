@@ -2,7 +2,11 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
 export const AUTH_BASE_URL = `${API_BASE_URL}/api/auth`;
 
-export const navLinks = ["Product", "How it works", "Live demo", "Community"];
+export const navLinks = [
+  { label: "Product", href: "/#product" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "GitHub", href: "https://github.com/Satpal777/Ratiod", external: true },
+];
 
 export const stats = [
   { value: "12K+", label: "polls launched every week" },

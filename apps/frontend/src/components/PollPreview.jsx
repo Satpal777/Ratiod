@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "./ui/Icon.jsx";
 
-export function PollPreview() {
+export function PollPreview({ onLaunch, launchDisabled = false }) {
   const [selected, setSelected] = useState("feature-a");
 
   const options = [
@@ -68,7 +68,7 @@ export function PollPreview() {
           <p style={{ margin: '0 0 4px 0', color: 'var(--muted)', fontSize: '0.9rem' }}>Share state</p>
           <p style={{ margin: 0, fontWeight: 600, color: 'var(--teal)' }}>Public link ready</p>
         </div>
-        <button className="button button-primary" type="button">
+        <button className="button button-primary" disabled={launchDisabled} onClick={onLaunch} type="button">
           Launch Poll
           <span className="button-icon">
             <Icon name="arrow" />

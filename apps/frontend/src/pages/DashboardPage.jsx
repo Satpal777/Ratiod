@@ -216,7 +216,7 @@ export function DashboardPage() {
     <div className="dashboard-layout">
       <aside className="dashboard-sidebar">
         <Link to="/" className="dashboard-brand">
-          <span className="brand-dot" /> Ratio'd
+          <img className="brand-dot" src="/favicon.png" alt="" aria-hidden="true" /> Ratio'd
         </Link>
 
         <nav className="dashboard-nav">

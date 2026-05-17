@@ -3,7 +3,7 @@ import { FeatureIcon } from "../components/ui/Icon.jsx";
 
 export function StorySection() {
   return (
-    <section className="story-section" style={{ maxWidth: '1120px', margin: '120px auto', padding: '0 24px' }}>
+    <section id="product" className="story-section" style={{ maxWidth: '1120px', margin: '120px auto', padding: '0 24px', scrollMarginTop: '120px' }}>
       <div className="story-intro" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', maxWidth: '600px', margin: '0 auto 64px auto' }}>
         <div className="eyebrow sketch-text" style={{ padding: '4px 12px', background: 'var(--warm)', border: '2px solid var(--text)', borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px', display: 'inline-block', marginBottom: '16px' }}>
           Why Ratio'd works

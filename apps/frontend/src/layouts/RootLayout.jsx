@@ -10,6 +10,21 @@ export function RootLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isDashboard = location.pathname === "/dashboard";
+  const scrollToSection = (event, href) => {
+    const [, sectionId] = href.split("#");
+
+    if (!sectionId || location.pathname !== "/") {
+      return;
+    }
+
+    const section = document.getElementById(sectionId);
+
+    if (section) {
+      event.preventDefault();
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.history.replaceState(null, "", href);
+    }
+  };
 
   return (
     <div className="page-shell">
@@ -20,14 +35,20 @@ export function RootLayout() {
         <header className={`topbar-wrap ${isNavbarScrolled ? "topbar-scrolled" : ""}`}>
         <div className="topbar">
           <Link className="brand-mark" to="/">
-            <span className="brand-dot" />
+            <img className="brand-dot" src="/favicon.png" alt="" aria-hidden="true" />
             Ratio'd
           </Link>
 
           <nav className="nav-links" aria-label="Primary">
             {navLinks.map((link) => (
-              <a href="/" key={link} onClick={(e) => e.preventDefault()}>
-                {link}
+              <a
+                href={link.href}
+                key={link.label}
+                onClick={(event) => scrollToSection(event, link.href)}
+                rel={link.external ? "noreferrer" : undefined}
+                target={link.external ? "_blank" : undefined}
+              >
+                {link.label}
               </a>
             ))}
           </nav>

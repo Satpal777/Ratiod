@@ -2,7 +2,7 @@ import { showcasePolls } from "../constants/index.js";
 
 export function ShowcaseSection() {
   return (
-    <section className="showcase-section" style={{ maxWidth: '1120px', margin: '0 auto', padding: '120px 24px' }}>
+    <section id="community" className="showcase-section" style={{ maxWidth: '1120px', margin: '0 auto', padding: '120px 24px', scrollMarginTop: '120px' }}>
       <div className="showcase-heading" style={{ textAlign: 'center', marginBottom: '64px' }}>
         <div className="eyebrow sketch-text" style={{ padding: '4px 12px', background: 'var(--warm)', border: '2px solid var(--text)', borderRadius: '255px 15px 225px 15px/15px 225px 15px 255px', display: 'inline-block', marginBottom: '16px' }}>
           Shareable moments

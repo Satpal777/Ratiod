@@ -169,11 +169,11 @@ main {
 }
 
 .brand-dot {
-  width: 10px;
-  height: 10px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--teal));
-  box-shadow: 0 0 22px rgba(72, 240, 164, 0.42);
+  object-fit: cover;
+  box-shadow: 0 0 18px rgba(0, 85, 255, 0.18);
 }
 
 .nav-links {

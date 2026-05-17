@@ -1,10 +1,26 @@
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth.jsx";
 import { Icon, Spark } from "../components/ui/Icon.jsx";
 import { PollPreview } from "../components/PollPreview.jsx";
 import { Button } from "../components/ui/Button.jsx";
 
 export function HeroSection() {
   const navigate = useNavigate();
+  const { session, authLoading, handleGoogleSignIn } = useAuth();
+
+  const startBuilding = () => {
+    if (session?.user) {
+      navigate("/dashboard");
+      return;
+    }
+
+    handleGoogleSignIn("/dashboard");
+  };
+
+  const showDemo = () => {
+    document.getElementById("live-demo")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.history.replaceState(null, "", "/#live-demo");
+  };
 
   return (
     <section className="hero-section">
@@ -46,14 +62,14 @@ export function HeroSection() {
         </p>
 
         <div className="hero-actions" style={{ marginTop: "32px" }}>
-          <Button variant="primary" onClick={() => navigate("/dashboard")}>
+          <Button variant="primary" disabled={authLoading} onClick={startBuilding}>
             Start Building
             <span className="button-icon">
               <Icon name="arrow" />
             </span>
           </Button>
 
-          <Button variant="secondary" onClick={() => navigate("/dashboard")}>
+          <Button variant="secondary" onClick={showDemo}>
             <span className="button-icon">
               <Icon name="play" />
             </span>
@@ -66,12 +82,12 @@ export function HeroSection() {
             className="sketch-text"
             style={{ fontSize: "1.2rem", color: "var(--muted)" }}
           >
-            Free to use! 🚀
+            Free to use.
           </span>
         </div>
       </div>
 
-      <div className="hero-visual" style={{ position: "relative", zIndex: 10 }}>
+      <div id="live-demo" className="hero-visual" style={{ position: "relative", zIndex: 10, scrollMarginTop: "120px" }}>
         <div
           className="sketch-box"
           style={{
@@ -80,10 +96,10 @@ export function HeroSection() {
             transform: "rotate(1deg)",
             width: "100%",
             maxWidth: "500px",
-            margin: "0 auto"
+            margin: "0 auto",
           }}
         >
-          <PollPreview />
+          <PollPreview onLaunch={startBuilding} launchDisabled={authLoading} />
         </div>
         <span
           className="sketch-text"
@@ -93,10 +109,10 @@ export function HeroSection() {
             right: "40px",
             fontSize: "1.5rem",
             color: "var(--teal)",
-            zIndex: 11
+            zIndex: 11,
           }}
         >
-          Live data! ⚡️
+          Live data.
         </span>
       </div>
 

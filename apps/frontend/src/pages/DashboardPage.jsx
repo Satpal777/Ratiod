@@ -19,6 +19,18 @@ function createDraft() {
   return { title: "", description: "", mode: "anonymous", expiresAt: "", questions: [createQuestion()] };
 }
 
+function getLocalDateInputValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function isDateBeforeToday(value) {
+  if (!value) return false;
+  return value.slice(0, 10) < getLocalDateInputValue(new Date());
+}
+
 function shareUrl(slug) {
   return `${window.location.origin}/poll/${slug}`;
 }
@@ -31,6 +43,7 @@ function formatDate(value) {
 export function DashboardPage() {
   const { session, handleSignOut } = useAuth();
   const navigate = useNavigate();
+  const minExpiryDateTime = `${getLocalDateInputValue(new Date())}T00:00`;
 
   const [activeTab, setActiveTab] = useState("view"); // 'view', 'create', 'analytics'
   const [draft, setDraft] = useState(() => createDraft());
@@ -161,7 +174,14 @@ export function DashboardPage() {
 
   async function handleCreatePoll(event) {
     event.preventDefault();
-    setError(""); setStatus(""); setLoading(true);
+    setError(""); setStatus("");
+
+    if (isDateBeforeToday(draft.expiresAt)) {
+      setError("Expiry date cannot be before today.");
+      return;
+    }
+
+    setLoading(true);
     try {
       const data = await apiRequest("/polls", {
         method: "POST",
@@ -284,7 +304,7 @@ export function DashboardPage() {
                 </label>
                 <label className="field-label">
                   Expiry
-                  <input type="datetime-local" value={draft.expiresAt} onChange={(e) => setDraft((c) => ({ ...c, expiresAt: e.target.value }))} />
+                  <input type="datetime-local" min={minExpiryDateTime} value={draft.expiresAt} onChange={(e) => setDraft((c) => ({ ...c, expiresAt: e.target.value }))} />
                 </label>
               </div>
 

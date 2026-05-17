@@ -57,7 +57,7 @@ export function HeroSection() {
             marginTop: "24px",
           }}
         >
-          Launch quick polls, collect live votes, and uncover AI-driven insights
+          Launch quick polls, collect live votes, and uncover insights
           with our modern creator toolkit.
         </p>
 

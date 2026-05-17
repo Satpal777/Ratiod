@@ -49,6 +49,12 @@ function isExpired(poll: { expiresAt: Date | null }) {
   return Boolean(poll.expiresAt && poll.expiresAt.getTime() <= Date.now());
 }
 
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
 function normalizeCreateInput(input: CreatePollInput) {
   const title = input.title?.trim();
   if (!title) throw new Error("Poll title is required.");
@@ -84,6 +90,9 @@ function normalizeCreateInput(input: CreatePollInput) {
   const expiresAt = input.expiresAt ? new Date(input.expiresAt) : null;
   if (expiresAt && Number.isNaN(expiresAt.getTime())) {
     throw new Error("Expiry time is invalid.");
+  }
+  if (expiresAt && expiresAt < startOfToday()) {
+    throw new Error("Expiry date cannot be before today.");
   }
 
   return {

@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useState, useEffect, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from "react";
 import { authRequest } from "../utils/api.js";
 
 const AuthContext = createContext(null);
@@ -7,15 +7,26 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [authLoading, setAuthLoading] = useState(true);
   const [session, setSession] = useState(null);
+  const signInWatcherRef = useRef(null);
 
   const refreshSession = useCallback(async () => {
     try {
       const data = await authRequest("/get-session");
-      setSession(data?.user ? data : null);
+      const nextSession = data?.user ? data : null;
+      setSession(nextSession);
+      return nextSession;
     } catch {
       setSession(null);
+      return null;
     } finally {
       setAuthLoading(false);
+    }
+  }, []);
+
+  const stopSignInWatcher = useCallback(() => {
+    if (signInWatcherRef.current) {
+      window.clearInterval(signInWatcherRef.current);
+      signInWatcherRef.current = null;
     }
   }, []);
 
@@ -35,11 +46,27 @@ export function AuthProvider({ children }) {
 
     return () => {
       isMounted = false;
+      stopSignInWatcher();
     };
-  }, []);
+  }, [stopSignInWatcher]);
 
   const handleGoogleSignIn = async (redirectTo = "/dashboard") => {
     const finalRedirect = typeof redirectTo === 'string' ? redirectTo : '/dashboard';
+    const authPopup = window.open(
+      "about:blank",
+      "ratiod-google-signin",
+      "popup=yes,width=520,height=720,left=200,top=80",
+    );
+
+    if (!authPopup) {
+      window.alert("Please allow popups to sign in with Google.");
+      setAuthLoading(false);
+      return;
+    }
+
+    authPopup.document.title = "Ratio'd sign in";
+    authPopup.document.body.innerHTML = "<p style=\"font-family: sans-serif; padding: 24px;\">Preparing Google sign in...</p>";
+
     setAuthLoading(true);
     try {
       const data = await authRequest("/sign-in/social", {
@@ -53,11 +80,41 @@ export function AuthProvider({ children }) {
       });
 
       if (data?.url) {
-        window.location.assign(data.url);
+        stopSignInWatcher();
+        authPopup.location.href = data.url;
+
+        signInWatcherRef.current = window.setInterval(async () => {
+          if (authPopup.closed) {
+            stopSignInWatcher();
+            await refreshSession();
+            return;
+          }
+
+          try {
+            const popupUrl = new URL(authPopup.location.href);
+            const hasReturnedToApp = popupUrl.origin === window.location.origin && popupUrl.pathname !== "blank";
+
+            if (hasReturnedToApp) {
+              authPopup.close();
+              stopSignInWatcher();
+              const nextSession = await refreshSession();
+
+              if (nextSession?.user && finalRedirect !== window.location.pathname) {
+                window.location.assign(finalRedirect);
+              }
+            }
+          } catch {
+            // Cross-origin Google pages are expected while OAuth is in progress.
+          }
+        }, 500);
         return;
       }
+
+      authPopup.close();
       await refreshSession();
     } catch (error) {
+      authPopup.close();
+      stopSignInWatcher();
       window.alert(error.message);
       setAuthLoading(false);
     }

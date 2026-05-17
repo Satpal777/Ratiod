@@ -856,6 +856,99 @@ main {
   transform: none;
 }
 
+.demo-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.demo-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(9, 12, 18, 0.72);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.demo-player-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  border: 2px solid var(--text);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.82);
+}
+
+.demo-player-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 0 0 auto;
+  gap: 18px;
+  padding: 12px 18px;
+}
+
+.demo-player-topbar {
+  border-bottom: 2px solid var(--text);
+  background: var(--warm);
+}
+
+.demo-player-topbar .panel-kicker {
+  margin: 0;
+}
+
+.demo-icon-button {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 2px solid var(--text);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.demo-video-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100dvh - 92px);
+  overflow: visible;
+  padding: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    #101014;
+  background-size: 34px 34px;
+}
+
+.demo-video-element {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  background: #101014;
+  object-fit: contain;
+}
+
 .spark {
   position: absolute;
   width: 28px;
@@ -1380,6 +1473,25 @@ select option {
 }
 
 @media (max-width: 640px) {
+  .demo-modal {
+    padding: 12px;
+  }
+
+  .demo-player-card {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .demo-player-topbar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .demo-video-frame {
+    max-height: calc(100dvh - 102px);
+    padding: 8px;
+  }
+
   .topbar {
     gap: 12px;
     padding: 12px;

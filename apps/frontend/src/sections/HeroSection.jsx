@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.jsx";
 import { Icon, Spark } from "../components/ui/Icon.jsx";
+import { DemoVideoModal } from "../components/DemoVideoModal.jsx";
 import { PollPreview } from "../components/PollPreview.jsx";
 import { Button } from "../components/ui/Button.jsx";
 
 export function HeroSection() {
   const navigate = useNavigate();
   const { session, authLoading, handleGoogleSignIn } = useAuth();
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
 
   const startBuilding = () => {
     if (session?.user) {
@@ -18,8 +21,7 @@ export function HeroSection() {
   };
 
   const showDemo = () => {
-    document.getElementById("live-demo")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    window.history.replaceState(null, "", "/#live-demo");
+    setIsDemoOpen(true);
   };
 
   return (
@@ -124,6 +126,7 @@ export function HeroSection() {
         className="hero-spark hero-spark-two"
         style={{ stroke: "var(--teal)" }}
       />
+      <DemoVideoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
     </section>
   );
 }
